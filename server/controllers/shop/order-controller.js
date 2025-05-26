@@ -20,29 +20,31 @@ const createAndInitOrder = async (req, res) => {
       cartId,
     } = req.body;
 
-    // Razorpay order options
+    if (!userId || !cartItems || !addressInfo || !totalAmount) {
+      return res.status(400).json({ success: false, message: "Missing required order fields" });
+    }
+
     const options = {
-      amount: totalAmount * 100, // Amount in paise
+      amount: Math.round(totalAmount * 100), // Convert to paise
       currency: "INR",
       receipt: `order_rcptid_${Date.now()}`,
+      payment_capture: 1, // Optional: auto capture payment
     };
 
-    // Create Razorpay order
     const razorpayOrder = await razorpay.orders.create(options);
 
-    // Save order to DB
     const newOrder = new Order({
       userId,
       cartId,
       cartItems,
       addressInfo,
-      orderStatus,
-      paymentMethod,
-      paymentStatus,
+      orderStatus: orderStatus || "pending",
+      paymentMethod: paymentMethod || "razorpay",
+      paymentStatus: paymentStatus || "unpaid",
       totalAmount,
-      orderDate,
-      orderUpdateDate,
-      paymentId: razorpayOrder.id, // Razorpay order ID
+      orderDate: orderDate || new Date(),
+      orderUpdateDate: orderUpdateDate || new Date(),
+      paymentId: razorpayOrder.id, // Razorpay Order ID
     });
 
     await newOrder.save();
@@ -56,7 +58,7 @@ const createAndInitOrder = async (req, res) => {
       currency: razorpayOrder.currency,
     });
   } catch (e) {
-    console.error(e);
+    console.error("Error in createAndInitOrder:", e);
     res.status(500).json({
       success: false,
       message: "Failed to create Razorpay order",
@@ -67,47 +69,59 @@ const createAndInitOrder = async (req, res) => {
 // ✅ VERIFY PAYMENT SIGNATURE & UPDATE ORDER
 const verifyAndCapturePayment = async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = req.body;
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      orderId,
+    } = req.body;
 
-    // Generate signature
-    const body = razorpay_order_id + "|" + razorpay_payment_id;
-    const expectedSignature = crypto
-      .createHmac("sha256", "RdTIrqR8dKyKG32YNYcc7xJX")
-      .update(body.toString())
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !orderId) {
+      return res.status(400).json({ success: false, message: "Missing payment details" });
+    }
+
+    const generatedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET )
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest("hex");
 
-    if (expectedSignature !== razorpay_signature) {
-      return res.status(400).json({ success: false, message: "Invalid payment signature" });
+    if (generatedSignature !== razorpay_signature) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid payment signature",
+      });
     }
 
     const order = await Order.findById(orderId);
-
     if (!order) {
       return res.status(404).json({ success: false, message: "Order not found" });
     }
 
-    // Update order status
     order.paymentStatus = "paid";
     order.orderStatus = "confirmed";
     order.paymentId = razorpay_payment_id;
 
-    // Update stock
+    // Decrement stock for each product in order.cartItems
     for (const item of order.cartItems) {
       const product = await Product.findById(item.productId);
-
-      if (!product || product.totalStock < item.quantity) {
+      if (!product) {
+        return res.status(404).json({ success: false, message: `Product not found: ${item.title || item.productId}` });
+      }
+      if (product.totalStock < item.quantity) {
         return res.status(400).json({
           success: false,
-          message: `Not enough stock for ${item.title}`,
+          message: `Not enough stock for ${item.title || item.productId}`,
         });
       }
-
       product.totalStock -= item.quantity;
       await product.save();
     }
 
-    // Delete cart and save order
-    await Cart.findByIdAndDelete(order.cartId);
+    // Delete cart associated with this order
+    if (order.cartId) {
+      await Cart.findByIdAndDelete(order.cartId);
+    }
+
     await order.save();
 
     res.status(200).json({
@@ -116,7 +130,7 @@ const verifyAndCapturePayment = async (req, res) => {
       data: order,
     });
   } catch (e) {
-    console.error(e);
+    console.error("Error in verifyAndCapturePayment:", e);
     res.status(500).json({
       success: false,
       message: "Error verifying payment",

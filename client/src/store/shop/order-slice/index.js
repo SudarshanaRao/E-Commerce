@@ -2,9 +2,11 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 
 const initialState = {
-  approvalURL: null,
   isLoading: false,
   orderId: null,
+  razorpayOrderId: null,
+  amount: null,
+  currency: null,
   orderList: [],
   orderDetails: null,
 };
@@ -17,7 +19,14 @@ export const createNewOrder = createAsyncThunk(
       orderData
     );
 
-    return response.data;
+    return {
+      order: {
+        razorpayOrderId: response.data.razorpayOrderId,
+        _id: response.data.orderId,
+        amount: response.data.amount,
+        currency: response.data.currency,
+      },
+    };
   }
 );
 
@@ -74,18 +83,24 @@ const shoppingOrderSlice = createSlice({
       })
       .addCase(createNewOrder.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.approvalURL = action.payload.approvalURL;
-        state.orderId = action.payload.orderId;
+        state.orderId = action.payload.order._id;
+        state.razorpayOrderId = action.payload.order.razorpayOrderId;
+        state.amount = action.payload.order.amount;
+        state.currency = action.payload.order.currency;
+
         sessionStorage.setItem(
           "currentOrderId",
-          JSON.stringify(action.payload.orderId)
+          JSON.stringify(action.payload.order._id)
         );
       })
       .addCase(createNewOrder.rejected, (state) => {
         state.isLoading = false;
-        state.approvalURL = null;
         state.orderId = null;
+        state.razorpayOrderId = null;
+        state.amount = null;
+        state.currency = null;
       })
+
       .addCase(getAllOrdersByUserId.pending, (state) => {
         state.isLoading = true;
       })
@@ -97,6 +112,7 @@ const shoppingOrderSlice = createSlice({
         state.isLoading = false;
         state.orderList = [];
       })
+
       .addCase(getOrderDetails.pending, (state) => {
         state.isLoading = true;
       })

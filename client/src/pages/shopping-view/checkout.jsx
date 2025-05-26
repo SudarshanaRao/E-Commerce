@@ -10,7 +10,6 @@ import { useToast } from "@/components/ui/use-toast";
 function ShoppingCheckout() {
   const { cartItems } = useSelector((state) => state.shopCart);
   const { user } = useSelector((state) => state.auth);
-  const { approvalURL } = useSelector((state) => state.shopOrder);
   const [currentSelectedAddress, setCurrentSelectedAddress] = useState(null);
   const [isPaymentStart, setIsPaymentStart] = useState(false);
   const dispatch = useDispatch();
@@ -29,7 +28,7 @@ function ShoppingCheckout() {
         )
       : 0;
 
-  function handleInitiatePaypalPayment() {
+  const handleInitiateRazorpayPayment = async () => {
     if (!cartItems?.items || cartItems.items.length === 0) {
       toast({
         title: "Your cart is empty. Please add items to proceed",
@@ -65,7 +64,7 @@ function ShoppingCheckout() {
         notes: currentSelectedAddress?.notes,
       },
       orderStatus: "pending",
-      paymentMethod: "paypal",
+      paymentMethod: "razorpay",
       paymentStatus: "pending",
       totalAmount: totalCartAmount,
       orderDate: new Date(),
@@ -74,18 +73,64 @@ function ShoppingCheckout() {
       payerId: "",
     };
 
-    dispatch(createNewOrder(orderData)).then((data) => {
-      if (data?.payload?.success) {
-        setIsPaymentStart(true);
-      } else {
-        setIsPaymentStart(false);
-      }
-    });
-  }
+    try {
+      setIsPaymentStart(true);
 
-  if (approvalURL) {
-    window.location.href = approvalURL;
-  }
+      const response = await dispatch(createNewOrder(orderData));
+      console.log("Create order response:", response);
+
+
+      const createdOrder = response.payload?.order;
+
+      if (!createdOrder || !createdOrder.razorpayOrderId) {
+        throw new Error("Order creation failed");
+      }
+
+      const options = {
+        key:  'rzp_test_iQY8NeIVqbtUDO',
+        amount: createdOrder.amount,
+        currency: createdOrder.currency,
+        name: "Your Shop",
+        description: "Order Payment",
+        order_id: createdOrder.razorpayOrderId,
+        handler: async function (res) {
+          const verifyRes = await fetch("/api/verify-payment", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              razorpay_order_id: res.razorpay_order_id,
+              razorpay_payment_id: res.razorpay_payment_id,
+              razorpay_signature: res.razorpay_signature,
+              orderId: createdOrder._id,
+            }),
+          });
+
+          const verifyResult = await verifyRes.json();
+          if (verifyResult.success) {
+            toast({ title: "Payment successful", variant: "default" });
+          } else {
+            toast({ title: "Payment verification failed", variant: "destructive" });
+          }
+        },
+        theme: {
+          color: "#3399cc",
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      toast({
+        title: "Payment failed. Please try again.",
+        variant: "destructive",
+      });
+      console.log(err);
+    } finally {
+      setIsPaymentStart(false);
+    }
+  };
 
   return (
     <div className="flex flex-col">
@@ -113,10 +158,10 @@ function ShoppingCheckout() {
             </div>
           </div>
           <div className="mt-4 w-full">
-            <Button onClick={handleInitiatePaypalPayment} className="w-full">
+            <Button onClick={handleInitiateRazorpayPayment} className="w-full">
               {isPaymentStart
-                ? "Processing Paypal Payment..."
-                : "Checkout with Paypal"}
+                ? "Processing Razorpay Payment..."
+                : "Checkout with Razorpay"}
             </Button>
           </div>
         </div>
