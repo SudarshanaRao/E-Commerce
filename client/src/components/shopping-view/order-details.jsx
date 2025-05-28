@@ -10,16 +10,16 @@ function ShoppingOrderDetailsView({ orderDetails }) {
 
   const statusColors = {
     confirmed: "bg-green-500",
-    rejected: "bg-red-600",
+    rejected: "bg-rose-500",
     pending: "bg-yellow-400",
   };
 
   return (
-    <DialogContent className="sm:max-w-[600px] p-6 bg-white/60 backdrop-blur-md rounded-xl shadow-2xl">
+    <DialogContent className="sm:max-w-[600px] p-6 bg-purple-100/50 backdrop-blur-md rounded-xl shadow-2xl border border-purple-200">
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
         className="grid gap-8"
       >
         {/* Order Summary */}
@@ -31,64 +31,83 @@ function ShoppingOrderDetailsView({ orderDetails }) {
             { label: "Payment Method", value: orderDetails?.paymentMethod },
             { label: "Payment Status", value: orderDetails?.paymentStatus },
           ].map(({ label, value }) => (
-            <div
+            <motion.div
               key={label}
-              className="flex justify-between items-center border-b border-gray-200 pb-2"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1, duration: 0.4 }}
+              className="flex justify-between items-center border-b border-purple-200 pb-2"
             >
-              <p className="font-semibold text-gray-700">{label}</p>
-              <Label className="text-gray-800 font-medium">{value}</Label>
-            </div>
+              <p className="font-semibold text-purple-800">{label}</p>
+              <Label className="text-indigo-700 font-medium">{value}</Label>
+            </motion.div>
           ))}
 
           {/* Order Status with badge */}
-          <div className="flex justify-between items-center border-b border-gray-200 pb-2">
-            <p className="font-semibold text-gray-700">Order Status</p>
-            <Badge
-              className={`py-1 px-4 rounded-full text-white font-semibold ${
-                statusColors[orderDetails?.orderStatus] || "bg-gray-700"
-              }`}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2, duration: 0.4 }}
+            className="flex justify-between items-center border-b border-purple-200 pb-2"
+          >
+            <p className="font-semibold text-purple-800">Order Status</p>
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.3 }}
             >
-              {orderDetails?.orderStatus?.toUpperCase()}
-            </Badge>
-          </div>
+              <Badge
+                className={`py-1 px-4 rounded-full text-white font-semibold shadow-md ${
+                  statusColors[orderDetails?.orderStatus] || "bg-gray-700"
+                }`}
+              >
+                {orderDetails?.orderStatus?.toUpperCase()}
+              </Badge>
+            </motion.div>
+          </motion.div>
         </div>
 
-        <Separator />
+        <Separator className="bg-purple-200" />
 
         {/* Cart Items */}
         <div>
-          <h3 className="text-lg font-bold mb-3 text-gray-800">Order Details</h3>
-          <ul className="divide-y divide-gray-200 rounded-md border border-gray-100 overflow-hidden">
+          <h3 className="text-lg font-bold mb-3 text-purple-800">Order Details</h3>
+          <ul className="divide-y divide-purple-200 rounded-md border border-purple-200 overflow-hidden bg-white/50 backdrop-blur-md">
             {orderDetails?.cartItems?.length ? (
-              orderDetails.cartItems.map((item) => (
+              orderDetails.cartItems.map((item, index) => (
                 <motion.li
                   key={item.title}
-                  whileHover={{ scale: 1.03, backgroundColor: "#f9fafb" }}
+                  whileHover={{
+                    scale: 1.02,
+                    backgroundColor: "rgba(237, 233, 254, 0.5)",
+                  }}
                   transition={{ type: "spring", stiffness: 300 }}
                   className="flex justify-between px-4 py-3"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
                 >
-                  <span className="font-medium text-gray-700">Title: {item.title}</span>
-                  <span className="text-gray-600">Qty: {item.quantity}</span>
-                  <span className="font-semibold text-indigo-600">₹{item.price}</span>
+                  <span className="font-medium text-purple-800">Title: {item.title}</span>
+                  <span className="text-purple-600">Qty: {item.quantity}</span>
+                  <span className="font-semibold text-pink-600">₹{item.price}</span>
                 </motion.li>
               ))
             ) : (
-              <p className="text-gray-500 text-center py-4">No items found</p>
+              <p className="text-purple-400 text-center py-4">No items found</p>
             )}
           </ul>
         </div>
 
         {/* Shipping Info */}
         <div>
-          <h3 className="text-lg font-bold mb-3 text-gray-800">Shipping Info</h3>
-          <div className="space-y-1 text-gray-600">
-            <p className="font-semibold">{user?.userName}</p>
+          <h3 className="text-lg font-bold mb-3 text-purple-800">Shipping Info</h3>
+          <div className="space-y-1 text-purple-700">
+            <p className="font-semibold text-indigo-800">{user?.userName}</p>
             <p>{orderDetails?.addressInfo?.address}</p>
             <p>{orderDetails?.addressInfo?.city}</p>
             <p>{orderDetails?.addressInfo?.pincode}</p>
             <p>{orderDetails?.addressInfo?.phone}</p>
             {orderDetails?.addressInfo?.notes && (
-              <p className="italic text-gray-500">{orderDetails.addressInfo.notes}</p>
+              <p className="italic text-purple-500">{orderDetails.addressInfo.notes}</p>
             )}
           </div>
         </div>

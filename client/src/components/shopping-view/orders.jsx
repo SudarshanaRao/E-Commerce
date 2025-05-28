@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Dialog } from "../ui/dialog";
@@ -25,10 +26,6 @@ function ShoppingOrders() {
   const { user } = useSelector((state) => state.auth);
   const { orderList, orderDetails } = useSelector((state) => state.shopOrder);
 
-  function handleFetchOrderDetails(getId) {
-    dispatch(getOrderDetails(getId));
-  }
-
   useEffect(() => {
     dispatch(getAllOrdersByUserId(user?.id));
   }, [dispatch]);
@@ -37,46 +34,64 @@ function ShoppingOrders() {
     if (orderDetails !== null) setOpenDetailsDialog(true);
   }, [orderDetails]);
 
-  console.log(orderDetails, "orderDetails");
+  function handleFetchOrderDetails(getId) {
+    dispatch(getOrderDetails(getId));
+  }
+
+  const statusColors = {
+    confirmed: "bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500",
+    rejected: "bg-red-500",
+    pending: "bg-yellow-400 text-black",
+  };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Order History</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Order ID</TableHead>
-              <TableHead>Order Date</TableHead>
-              <TableHead>Order Status</TableHead>
-              <TableHead>Order Price</TableHead>
-              <TableHead>
-                <span className="sr-only">Details</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {orderList && orderList.length > 0
-              ? orderList.map((orderItem) => (
-                  <TableRow>
+    <motion.div
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.4 }}
+    >
+      <Card className="shadow-2xl border border-indigo-100 bg-white/60 backdrop-blur-md rounded-xl">
+        <CardHeader>
+          <CardTitle className="text-purple-700 text-2xl font-bold">
+            Order History
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gradient-to-r from-purple-100 via-pink-100 to-indigo-100">
+                <TableHead>Order ID</TableHead>
+                <TableHead>Order Date</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Price</TableHead>
+                <TableHead>
+                  <span className="sr-only">Details</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {orderList && orderList.length > 0 ? (
+                orderList.map((orderItem, index) => (
+                  <motion.tr
+                    key={index}
+                    whileHover={{ scale: 1.01 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                    className="hover:bg-purple-50/60 cursor-pointer rounded-lg"
+                  >
                     <TableCell>{orderItem?._id}</TableCell>
                     <TableCell>{orderItem?.orderDate.split("T")[0]}</TableCell>
                     <TableCell>
                       <Badge
-                        className={`py-1 px-3 ${
-                          orderItem?.orderStatus === "confirmed"
-                            ? "bg-green-500"
-                            : orderItem?.orderStatus === "rejected"
-                            ? "bg-red-600"
-                            : "bg-black"
+                        className={`text-white font-semibold py-1 px-3 rounded-full shadow-md ${
+                          statusColors[orderItem?.orderStatus] || "bg-gray-500"
                         }`}
                       >
-                        {orderItem?.orderStatus}
+                        {orderItem?.orderStatus?.toUpperCase()}
                       </Badge>
                     </TableCell>
-                    <TableCell>₹{orderItem?.totalAmount}</TableCell>
+                    <TableCell className="font-semibold text-indigo-600">
+                      ₹{orderItem?.totalAmount}
+                    </TableCell>
                     <TableCell>
                       <Dialog
                         open={openDetailsDialog}
@@ -86,6 +101,7 @@ function ShoppingOrders() {
                         }}
                       >
                         <Button
+                          className="bg-gradient-to-r from-purple-600 via-pink-500 to-indigo-600 hover:opacity-90 text-white shadow-md"
                           onClick={() =>
                             handleFetchOrderDetails(orderItem?._id)
                           }
@@ -95,13 +111,20 @@ function ShoppingOrders() {
                         <ShoppingOrderDetailsView orderDetails={orderDetails} />
                       </Dialog>
                     </TableCell>
-                  </TableRow>
+                  </motion.tr>
                 ))
-              : null}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+              ) : (
+                <TableRow>
+                  <TableCell colSpan="5" className="text-center text-gray-500">
+                    No orders found
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
 

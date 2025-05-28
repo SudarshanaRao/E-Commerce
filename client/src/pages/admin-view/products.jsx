@@ -108,9 +108,9 @@ function AdminProducts() {
         transition={{ duration: 0.4 }}
       >
         {productList?.length > 0 &&
-          productList.map((productItem) => (
+          productList.map((productItem, index) => (
             <AdminProductTile
-              key={productItem.id}
+              key={`${productItem.id}-${index}`}
               setFormData={setFormData}
               setOpenCreateProductsDialog={setOpenCreateProductsDialog}
               setCurrentEditedId={setCurrentEditedId}

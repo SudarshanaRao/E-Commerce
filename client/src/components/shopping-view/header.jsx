@@ -50,12 +50,15 @@ function MenuItems() {
   }
 
   return (
-    <nav className="flex flex-col mb-3 lg:mb-0 lg:items-center gap-6 lg:flex-row">
+    <nav className="flex flex-col lg:flex-row gap-6 mb-3 lg:mb-0 lg:items-center">
       {shoppingViewHeaderMenuItems.map((menuItem) => (
         <Label
-          onClick={() => handleNavigate(menuItem)}
-          className="text-sm font-medium cursor-pointer"
           key={menuItem.id}
+          onClick={() => handleNavigate(menuItem)}
+          className="text-sm font-semibold cursor-pointer select-none
+                     transition-colors duration-200
+                     text-gray-700 hover:text-purple-600
+                     px-2 py-1 rounded"
         >
           {menuItem.label}
         </Label>
@@ -82,19 +85,22 @@ function HeaderRightContent() {
   }, [dispatch, user?.id]);
 
   return (
-    <div className="flex lg:items-center lg:flex-row flex-col gap-4">
+    <div className="flex flex-col lg:flex-row items-center gap-4">
       <Sheet open={openCartSheet} onOpenChange={setOpenCartSheet}>
         <Button
           onClick={() => setOpenCartSheet(true)}
           variant="outline"
           size="icon"
-          className="relative"
+          className="relative hover:bg-purple-50 transition-colors"
+          aria-label="User cart"
         >
-          <ShoppingCart className="w-6 h-6" />
-          <span className="absolute top-[-5px] right-[2px] font-bold text-sm">
+          <ShoppingCart className="w-6 h-6 text-gray-700" />
+          <span
+            className="absolute -top-1 -right-1 bg-purple-600 text-white rounded-full text-xs font-bold
+                       w-5 h-5 flex items-center justify-center select-none"
+          >
             {cartItems?.items?.length || 0}
           </span>
-          <span className="sr-only">User cart</span>
         </Button>
         <UserCartWrapper
           setOpenCartSheet={setOpenCartSheet}
@@ -104,22 +110,30 @@ function HeaderRightContent() {
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Avatar className="bg-black">
-            <AvatarFallback className="bg-black text-white font-extrabold">
+          <Avatar className="bg-purple-700 cursor-pointer hover:bg-purple-800 transition-colors">
+            <AvatarFallback className="bg-purple-700 text-white font-extrabold">
               {user?.userName ? user.userName[0].toUpperCase() : "U"}
             </AvatarFallback>
           </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent side="right" className="w-56">
-          <DropdownMenuLabel>Logged in as {user?.userName || "User"}</DropdownMenuLabel>
+          <DropdownMenuLabel className="text-gray-600">
+            Logged in as <span className="font-semibold">{user?.userName || "User"}</span>
+          </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => navigate("/shop/account")}>
-            <UserCog className="mr-2 h-4 w-4" />
+          <DropdownMenuItem
+            className="hover:bg-purple-100 flex items-center gap-2"
+            onClick={() => navigate("/shop/account")}
+          >
+            <UserCog className="w-4 h-4" />
             Account
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleLogout}>
-            <LogOut className="mr-2 h-4 w-4" />
+          <DropdownMenuItem
+            className="hover:bg-red-100 flex items-center gap-2 text-red-600"
+            onClick={handleLogout}
+          >
+            <LogOut className="w-4 h-4" />
             Logout
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -132,31 +146,31 @@ function ShoppingHeader() {
   const { isAuthenticated } = useSelector((state) => state.auth);
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background">
+    <header className="sticky top-0 z-40 w-full border-b bg-white shadow-sm">
       <div className="flex h-16 items-center justify-between px-4 md:px-6">
-        <Link to="/shop/home" className="flex items-center gap-2">
+        <Link to="/shop/home" className="flex items-center gap-2 text-purple-700 hover:text-purple-900 font-bold text-lg">
           <HousePlug className="h-6 w-6" />
-          <span className="font-bold">Ecommerce</span>
+          Ecommerce
         </Link>
 
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="lg:hidden">
-              <Menu className="h-6 w-6" />
+            <Button variant="outline" size="icon" className="lg:hidden hover:bg-purple-50 transition-colors">
+              <Menu className="h-6 w-6 text-gray-700" />
               <span className="sr-only">Toggle header menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-full max-w-xs">
+          <SheetContent side="left" className="w-full max-w-xs p-6">
             <MenuItems />
             <HeaderRightContent />
           </SheetContent>
         </Sheet>
 
-        <div className="hidden lg:block">
+        <div className="hidden lg:flex lg:items-center lg:gap-8">
           <MenuItems />
         </div>
 
-        <div className="hidden lg:block">
+        <div className="hidden lg:flex lg:items-center">
           <HeaderRightContent />
         </div>
       </div>

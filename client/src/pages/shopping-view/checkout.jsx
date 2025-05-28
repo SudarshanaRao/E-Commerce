@@ -77,7 +77,6 @@ function ShoppingCheckout() {
       setIsPaymentStart(true);
 
       const response = await dispatch(createNewOrder(orderData));
-      console.log("Create order response:", response);
 
 
       const createdOrder = response.payload?.order;

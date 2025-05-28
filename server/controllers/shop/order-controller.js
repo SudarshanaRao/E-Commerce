@@ -81,7 +81,7 @@ const verifyAndCapturePayment = async (req, res) => {
     }
 
     const generatedSignature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET )
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || 'RdTIrqR8dKyKG32YNYcc7xJX')
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest("hex");
 
